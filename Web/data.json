@@ -1,0 +1,22 @@
+{
+  "settings": {
+    "brand_name": "SR",
+    "tagline": "Private Collection",
+    "ig_handle": "",
+    "phone": "(555) 000-0000",
+    "admin_password": "admin123",
+    "menu1_name": "Menu 1",
+    "menu2_name": "Menu 2",
+    "menu3_name": "Menu 3"
+  },
+  "approved_clients": [
+    {
+      "id": "1",
+      "name": "SR",
+      "handle": "",
+      "code": "VIP2025",
+      "menu": 1
+    }
+  ],
+  "menu_items": []
+}

@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Panel</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Pirata+One&family=Inter:wght@300;400;500;600&display=swap');
+
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    :root{
+      --mg:#8b0000; --cy:#00e5ff; --bg:#000; --s1:#0d0d0d; --s2:#151515;
+      --s3:#1e1e1e; --text:#f0f0f0; --muted:#666; --r:10px;
+    }
+    body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+    /* ── Login ── */
+    #login-screen{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;gap:1rem;padding:2rem;
+      background:radial-gradient(ellipse at 40% 30%,rgba(139,0,0,.35) 0%,transparent 55%),
+                 radial-gradient(ellipse at 70% 80%,rgba(80,0,0,.2) 0%,transparent 50%),#000}
+    .login-title{font-family:'Pirata One',serif;font-size:2.2rem;color:var(--mg);letter-spacing:.05em}
+    .login-sub{color:var(--muted);font-size:.8rem;letter-spacing:.15em;text-transform:uppercase;margin-bottom:.5rem}
+    #login-screen input{width:100%;max-width:300px;background:var(--s2);border:1px solid #2a2a2a;border-radius:var(--r);
+      padding:.85rem 1rem;font-size:1rem;color:var(--cy);text-align:center;letter-spacing:.15em;outline:none;font-family:inherit}
+    #login-screen input:focus{border-color:var(--mg)}
+    #login-screen button{width:100%;max-width:300px;background:var(--mg);border:none;border-radius:var(--r);
+      padding:.85rem;font-size:.85rem;letter-spacing:.15em;text-transform:uppercase;color:#fff;font-weight:600;cursor:pointer;font-family:inherit}
+    #login-screen button:hover{opacity:.85}
+    #login-err{color:var(--mg);font-size:.8rem;min-height:1.2em}
+
+    /* ── App shell ── */
+    #app{display:none}
+    .topbar{background:var(--s1);border-bottom:1px solid #1a1a1a;padding:.9rem 1.5rem;
+      display:flex;align-items:center;justify-content:space-between}
+    .topbar-title{font-family:'Pirata One',serif;font-size:1.4rem;color:var(--mg)}
+    .topbar-title span{color:var(--cy);font-size:.75rem;letter-spacing:.1em;font-family:'Inter',sans-serif;margin-left:.6rem}
+    .logout-btn{background:transparent;border:1px solid #333;border-radius:6px;padding:.4rem .9rem;
+      color:var(--muted);font-size:.78rem;cursor:pointer;font-family:inherit;letter-spacing:.08em;text-transform:uppercase}
+    .logout-btn:hover{border-color:var(--mg);color:var(--mg)}
+
+    .tabs{display:flex;gap:0;border-bottom:1px solid #1a1a1a;background:var(--s1)}
+    .tab{padding:.8rem 1.4rem;font-size:.8rem;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;
+      color:var(--muted);border-bottom:2px solid transparent;transition:all .2s;font-family:inherit;background:transparent;border-top:none;border-left:none;border-right:none}
+    .tab:hover{color:var(--text)}
+    .tab.active{color:var(--mg);border-bottom-color:var(--mg)}
+
+    .panel{display:none;padding:1.5rem;max-width:900px;margin:0 auto}
+    .panel.active{display:block}
+
+    /* ── Cards / sections ── */
+    .section-card{background:var(--s1);border:1px solid #1a1a1a;border-radius:var(--r);padding:1.4rem;margin-bottom:1.2rem}
+    .section-card h3{font-size:.8rem;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);margin-bottom:1rem}
+
+    /* ── Form elements ── */
+    .field{display:flex;flex-direction:column;gap:.4rem;margin-bottom:.9rem}
+    .field label{font-size:.75rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+    .field input,.field select,.field textarea{background:var(--s2);border:1px solid #2a2a2a;border-radius:8px;
+      padding:.7rem .9rem;font-size:.9rem;color:var(--text);outline:none;font-family:inherit;width:100%}
+    .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--mg)}
+    .field textarea{resize:vertical;min-height:70px}
+    .field select option{background:var(--s2)}
+
+    .row{display:grid;grid-template-columns:1fr 1fr;gap:.8rem}
+    @media(max-width:500px){.row{grid-template-columns:1fr}}
+
+    .btn{border:none;border-radius:8px;padding:.65rem 1.2rem;font-size:.8rem;letter-spacing:.1em;
+      text-transform:uppercase;cursor:pointer;font-family:inherit;font-weight:600;transition:opacity .2s}
+    .btn:hover{opacity:.85}
+    .btn-primary{background:var(--mg);color:#fff}
+    .btn-outline{background:transparent;border:1px solid #333;color:var(--muted)}
+    .btn-outline:hover{border-color:var(--mg);color:var(--mg);opacity:1}
+    .btn-danger{background:transparent;border:1px solid #440000;color:#cc3333}
+    .btn-danger:hover{background:#220000;opacity:1}
+    .btn-sm{padding:.4rem .8rem;font-size:.72rem}
+
+    /* ── Items grid ── */
+    .items-list{display:flex;flex-direction:column;gap:.7rem;margin-bottom:1rem}
+    .item-row{background:var(--s2);border:1px solid #1e1e1e;border-radius:8px;
+      display:flex;align-items:center;gap:1rem;padding:.8rem 1rem}
+    .item-row img{width:52px;height:52px;object-fit:cover;border-radius:6px;flex-shrink:0}
+    .item-row .item-info{flex:1;min-width:0}
+    .item-row .item-name{font-size:.95rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .item-row .item-meta{font-size:.78rem;color:var(--muted);margin-top:.2rem}
+    .item-row .item-actions{display:flex;gap:.5rem;flex-shrink:0}
+
+    /* ── Clients list ── */
+    .client-list{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1rem}
+    .client-row{background:var(--s2);border:1px solid #1e1e1e;border-radius:8px;padding:.8rem 1rem}
+    .client-row-top{display:flex;align-items:center;justify-content:space-between;gap:.5rem}
+    .client-info .client-name{font-size:.95rem;font-weight:600}
+    .client-info .client-handle{font-size:.8rem;color:var(--muted);margin-top:.1rem}
+    .client-code-row{display:flex;align-items:center;gap:.6rem;margin-top:.6rem;
+      background:var(--s3);border-radius:6px;padding:.5rem .8rem}
+    .client-code-label{font-size:.7rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}
+    .client-code-val{font-family:monospace;font-size:1rem;color:var(--cy);letter-spacing:.15em;font-weight:600;flex:1}
+    .copy-btn{background:transparent;border:1px solid #333;border-radius:5px;padding:.25rem .6rem;
+      font-size:.72rem;color:var(--muted);cursor:pointer;font-family:inherit}
+    .copy-btn:hover{border-color:var(--cy);color:var(--cy)}
+
+    /* ── Modal ── */
+    .modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;
+      display:flex;align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.hidden{display:none}
+    .modal{background:var(--s1);border:1px solid #2a2a2a;border-radius:12px;
+      width:100%;max-width:480px;padding:1.5rem;max-height:90vh;overflow-y:auto}
+    .modal-title{font-size:1rem;font-weight:600;margin-bottom:1.2rem;color:var(--text)}
+    .modal-actions{display:flex;gap:.6rem;justify-content:flex-end;margin-top:1rem}
+
+    /* ── Toast ── */
+    #toast{position:fixed;bottom:1.5rem;right:1.5rem;background:var(--s2);border:1px solid var(--mg);
+      border-radius:8px;padding:.7rem 1.2rem;font-size:.85rem;color:var(--text);z-index:999;
+      opacity:0;transform:translateY(8px);transition:all .3s;pointer-events:none}
+    #toast.show{opacity:1;transform:translateY(0)}
+
+    .badge{display:inline-block;background:var(--s3);border-radius:4px;padding:.15rem .5rem;
+      font-size:.72rem;color:var(--cy);letter-spacing:.05em}
+
+    #dropzone.drag-over{border-color:var(--mg)!important;background:#1a0000!important}
+    #dropzone:hover{border-color:#555}
+
+    /* ── Mobile Optimizations ── */
+    @media(max-width:600px){
+      /* Login */
+      #login-screen input,#login-screen button{max-width:100%;font-size:1.05rem;padding:1rem}
+
+      /* Topbar */
+      .topbar{padding:.75rem 1rem}
+      .topbar-title{font-size:1.2rem}
+      .logout-btn{padding:.5rem .8rem;font-size:.75rem}
+
+      /* Tabs — scrollable row */
+      .tabs{overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+      .tabs::-webkit-scrollbar{display:none}
+      .tab{padding:.9rem 1.1rem;font-size:.75rem;white-space:nowrap;flex-shrink:0}
+
+      /* Panel */
+      .panel{padding:1rem}
+      .section-card{padding:1rem}
+
+      /* Form inputs — bigger touch targets */
+      .field input,.field select,.field textarea{font-size:16px;padding:.85rem 1rem} /* 16px prevents iOS zoom */
+      .field textarea{min-height:90px}
+
+      /* Buttons */
+      .btn{padding:.8rem 1.2rem;font-size:.85rem}
+      .btn-sm{padding:.6rem .9rem;font-size:.78rem}
+      .modal-actions{flex-direction:column-reverse}
+      .modal-actions .btn{width:100%;text-align:center;padding:.9rem}
+
+      /* Item rows — stack actions below on small screens */
+      .item-row{flex-wrap:wrap;gap:.7rem}
+      .item-row img{width:60px;height:60px}
+      .item-row .item-actions{width:100%;justify-content:flex-end}
+
+      /* Client rows */
+      .client-row-top{flex-wrap:wrap;gap:.5rem}
+      .client-code-row{flex-wrap:wrap;gap:.5rem}
+      .copy-btn{padding:.5rem .9rem;font-size:.78rem}
+
+      /* Modal — full screen sheet on mobile */
+      .modal-overlay{align-items:flex-end;padding:0}
+      .modal{border-radius:20px 20px 0 0;max-height:95vh;padding:1.2rem 1rem 2rem}
+
+      /* Status buttons — full width on mobile */
+      .status-btn{flex:1;text-align:center;padding:.7rem .5rem}
+
+      /* Upload zones — bigger tap area */
+      #dropzone,#vid-dropzone{padding:2rem 1rem}
+
+      /* Toast — bottom center on mobile */
+      #toast{right:50%;transform:translateX(50%) translateY(8px);bottom:1rem;font-size:.9rem}
+      #toast.show{transform:translateX(50%) translateY(0)}
+    }
+    .status-btn{background:var(--s3);border:1px solid #333;border-radius:8px;padding:.5rem 1rem;
+      font-size:.78rem;color:var(--muted);cursor:pointer;font-family:inherit;letter-spacing:.05em;transition:all .2s}
+    .status-btn:hover{border-color:#555;color:var(--text)}
+    .status-btn.active-status{border-color:var(--mg);color:var(--mg);background:#1a0000}
+
+    /* Menu tier badge */
+    .tier-select-btn{background:var(--s3);border:1px solid #333;border-radius:8px;padding:.55rem 1.1rem;
+      font-size:.8rem;color:var(--muted);cursor:pointer;font-family:inherit;transition:all .2s;flex:1}
+    .tier-select-btn:hover{border-color:#555;color:var(--text)}
+    .tier-select-btn[data-tier="1"].active-tier{border-color:#00e5ff;color:#00e5ff;background:rgba(0,229,255,.08)}
+    .tier-select-btn[data-tier="2"].active-tier{border-color:#8b0000;color:#8b0000;background:rgba(139,0,0,.08)}
+    .tier-select-btn[data-tier="3"].active-tier{border-color:#ffb400;color:#ffb400;background:rgba(255,180,0,.08)}
+
+    .tier-badge{display:inline-block;border-radius:5px;padding:.15rem .55rem;font-size:.72rem;
+      font-weight:700;letter-spacing:.06em}
+    .tier-1{background:rgba(0,229,255,.12);color:#00e5ff;border:1px solid #005f6b}
+    .tier-2{background:rgba(139,0,0,.12);color:#8b0000;border:1px solid #4a0000}
+    .tier-3{background:rgba(255,180,0,.12);color:#ffb400;border:1px solid #6b4800}
+
+    /* Price grid */
+    .price-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:.6rem}
+    @media(max-width:500px){.price-grid{grid-template-columns:1fr}}
+    .price-field-label{font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;margin-bottom:.25rem}
+    .price-field-label.t1{color:#00e5ff}.price-field-label.t2{color:#8b0000}.price-field-label.t3{color:#ffb400}
+  </style>
+</head>
+<body>
+
+<!-- Login -->
+<div id="login-screen">
+  <div class="login-sub">Admin Panel</div>
+  <input id="pw-input" type="password" placeholder="Admin password" autocomplete="current-password"/>
+  <button onclick="doLogin()">Sign In</button>
+  <p id="login-err"></p>
+</div>
+
+<!-- App -->
+<div id="app">
+  <div class="topbar">
+    <div class="topbar-title" onclick="window.location.href='/'" style="cursor:pointer" title="Go to Menu"><span>Admin</span></div>
+    <button class="logout-btn" onclick="doLogout()">Log Out</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('menu')">Menu Items</button>
+    <button class="tab" onclick="switchTab('clients')">Approved Clients</button>
+    <button class="tab" onclick="switchTab('settings')">Settings</button>
+  </div>
+
+  <!-- Menu Items Panel -->
+  <div class="panel active" id="panel-menu">
+    <div class="section-card">
+      <h3>All Menu Items</h3>
+      <div class="items-list" id="items-list"></div>
+      <button class="btn btn-primary" onclick="openAddItem()">+ Add Item</button>
+    </div>
+  </div>
+
+  <!-- Clients Panel -->
+  <div class="panel" id="panel-clients">
+    <div class="section-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem">
+        <h3 style="margin-bottom:0">Approved Clients</h3>
+        <button class="btn btn-outline btn-sm" onclick="downloadClients()">⬇ Download CSV</button>
+      </div>
+      <div class="client-list" id="client-list"></div>
+      <button class="btn btn-primary" style="margin-top:.5rem" onclick="openAddClient()">+ Add Client</button>
+    </div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div class="panel" id="panel-settings">
+    <div class="section-card">
+      <h3>Brand & Contact</h3>
+      <div class="row">
+        <div class="field"><label>Brand Name</label><input id="s-brand" type="text"/></div>
+        <div class="field"><label>Tagline</label><input id="s-tagline" type="text"/></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>Instagram Handle</label><input id="s-ig" type="text"/></div>
+        <div class="field"><label>Phone Number</label><input id="s-phone" type="text"/></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <h3>Menu Names</h3>
+      <p style="color:#555;font-size:.8rem;margin-bottom:1rem">Name your 3 menu tiers (e.g. Retail, VIP, Wholesale)</p>
+      <div class="price-grid">
+        <div class="field"><label class="price-field-label t1">Menu 1 Name</label><input id="s-menu1" type="text" placeholder="e.g. Retail"/></div>
+        <div class="field"><label class="price-field-label t2">Menu 2 Name</label><input id="s-menu2" type="text" placeholder="e.g. VIP"/></div>
+        <div class="field"><label class="price-field-label t3">Menu 3 Name</label><input id="s-menu3" type="text" placeholder="e.g. Wholesale"/></div>
+      </div>
+    </div>
+    <div class="section-card">
+      <h3>Admin Security</h3>
+      <div class="field"><label>New Admin Password</label><input id="s-adminpw" type="password" placeholder="Leave blank to keep current"/></div>
+      <p style="color:#444;font-size:.78rem;margin-top:.5rem">Client access codes are managed individually in the <strong style="color:#666">Approved Clients</strong> tab.</p>
+    </div>
+    <button class="btn btn-primary" onclick="saveSettings()">Save Settings</button>
+  </div>
+</div>
+
+<!-- Client Modal -->
+<div class="modal-overlay hidden" id="client-modal">
+  <div class="modal">
+    <div class="modal-title" id="client-modal-title">Add Client</div>
+    <input type="hidden" id="client-edit-id"/>
+    <div class="field"><label>Name</label><input id="client-name" type="text" placeholder="e.g. John"/></div>
+    <input type="hidden" id="client-lastname"/>
+    <div class="field"><label>Instagram Handle</label><input id="client-handle" type="text" placeholder="@handle"/></div>
+    <div class="field"><label>Phone Number</label><input id="client-phone" type="tel" placeholder="(909) 555-1234"/></div>
+    <div class="field">
+      <label>Assign to Menu</label>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap" id="menu-tier-btns">
+        <button type="button" class="tier-select-btn active-tier" data-tier="1" onclick="selectTier(1)">Menu 1</button>
+        <button type="button" class="tier-select-btn" data-tier="2" onclick="selectTier(2)">Menu 2</button>
+        <button type="button" class="tier-select-btn" data-tier="3" onclick="selectTier(3)">Menu 3</button>
+      </div>
+      <input type="hidden" id="client-menu" value="1"/>
+    </div>
+    <div class="field">
+      <label>Access Code</label>
+      <div style="display:flex;gap:.5rem">
+        <input id="client-code" type="text" placeholder="Auto-generated if blank" style="text-transform:uppercase;letter-spacing:.1em"/>
+        <button type="button" class="btn btn-outline" style="flex-shrink:0;white-space:nowrap" onclick="genCode()">🎲 Generate</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeClientModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveClient()">Save Client</button>
+    </div>
+  </div>
+</div>
+
+<!-- Item Modal -->
+<div class="modal-overlay hidden" id="item-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Add Menu Item</div>
+    <input type="hidden" id="edit-id"/>
+    <div class="field"><label>Category</label>
+      <select id="edit-cat">
+        <option>Flower</option>
+        <option>Concentrates</option>
+        <option>Edibles</option>
+        <option>Disposables</option>
+      </select>
+    </div>
+    <div class="field"><label>Name</label><input id="edit-name" type="text"/></div>
+    <div class="field">
+      <label>Prices <span style="color:#444;font-weight:400;text-transform:none;letter-spacing:0;font-size:.75rem">(set per menu)</span></label>
+      <div class="price-grid">
+        <div>
+          <div class="price-field-label t1" id="price-label-1">Menu 1</div>
+          <input id="edit-price"  type="text" placeholder="$00" style="background:var(--s2);border:1px solid #005f6b;border-radius:8px;padding:.7rem .9rem;font-size:.9rem;color:#00e5ff;outline:none;font-family:inherit;width:100%" oninput="autoCalcPrices()"/>
+        </div>
+        <div>
+          <div class="price-field-label t2" id="price-label-2">Menu 2</div>
+          <input id="edit-price2" type="text" placeholder="$00" style="background:var(--s2);border:1px solid #4a0000;border-radius:8px;padding:.7rem .9rem;font-size:.9rem;color:#8b0000;outline:none;font-family:inherit;width:100%"/>
+        </div>
+        <div>
+          <div class="price-field-label t3" id="price-label-3">Menu 3</div>
+          <input id="edit-price3" type="text" placeholder="$00" style="background:var(--s2);border:1px solid #6b4800;border-radius:8px;padding:.7rem .9rem;font-size:.9rem;color:#ffb400;outline:none;font-family:inherit;width:100%"/>
+        </div>
+      </div>
+    </div>
+    <div class="field"><label>Description</label><textarea id="edit-desc"></textarea></div>
+    <div class="field">
+      <label>Image</label>
+      <div id="dropzone" onclick="document.getElementById('file-input').click()"
+        style="border:2px dashed #333;border-radius:10px;padding:1.4rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--s2)">
+        <div id="drop-preview" style="display:none;margin-bottom:.6rem">
+          <img id="drop-img-preview" src="" style="max-height:120px;max-width:100%;border-radius:6px;object-fit:cover"/>
+        </div>
+        <div id="drop-label" style="color:#555;font-size:.82rem;letter-spacing:.05em">
+          📁 Drop image here or <span style="color:var(--mg)">click to browse</span>
+        </div>
+        <input type="file" id="file-input" accept="image/*" capture="environment" style="display:none" onchange="handleFileSelect(this.files[0])"/>
+      </div>
+      <input id="edit-img" type="text" placeholder="Or paste image URL" style="margin-top:.5rem;background:var(--s2);border:1px solid #2a2a2a;border-radius:8px;padding:.6rem .9rem;font-size:.85rem;color:var(--muted);outline:none;font-family:inherit;width:100%" oninput="previewUrl(this.value)"/>
+    </div>
+    <div class="field">
+      <label>Video <span style="color:#444;font-weight:400;text-transform:none;letter-spacing:0">(optional — plays in detail view)</span></label>
+      <div id="vid-dropzone" onclick="document.getElementById('video-input').click()"
+        style="border:2px dashed #333;border-radius:10px;padding:1.2rem;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;background:var(--s2)">
+        <div id="vid-preview" style="display:none;margin-bottom:.6rem">
+          <video id="vid-preview-el" src="" style="max-height:100px;max-width:100%;border-radius:6px" muted playsinline controls></video>
+        </div>
+        <div id="vid-label" style="color:#555;font-size:.82rem;letter-spacing:.05em">
+          🎬 Drop video here or <span style="color:var(--mg)">click to browse</span>
+        </div>
+        <input type="file" id="video-input" accept="video/*" capture="environment" style="display:none" onchange="handleVideoSelect(this.files[0])"/>
+      </div>
+      <input id="edit-video" type="text" placeholder="Or paste video URL (.mp4)" style="margin-top:.5rem;background:var(--s2);border:1px solid #2a2a2a;border-radius:8px;padding:.6rem .9rem;font-size:.85rem;color:var(--muted);outline:none;font-family:inherit;width:100%"/>
+    </div>
+    <div class="field">
+      <label>Availability</label>
+      <div style="display:flex;gap:.6rem;flex-wrap:wrap">
+        <button type="button" id="status-available" class="status-btn active-status" onclick="setStatus('available')">✅ Available</button>
+        <button type="button" id="status-preorder"  class="status-btn" onclick="setStatus('preorder')">🔔 Pre-Order</button>
+        <button type="button" id="status-soldout"   class="status-btn" onclick="setStatus('soldout')">🚫 Sold Out</button>
+      </div>
+      <input type="hidden" id="edit-status" value="available"/>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveItem()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+  // ── Login ──────────────────────────────────────────────
+  document.getElementById('pw-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') doLogin();
+  });
+
+  async function doLogin() {
+    const pw = document.getElementById('pw-input').value;
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({password: pw})
+    });
+    if (res.ok) {
+      document.getElementById('login-screen').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      loadAll();
+    } else {
+      document.getElementById('login-err').textContent = 'Wrong password.';
+    }
+  }
+
+  async function doLogout() {
+    await fetch('/api/admin/logout', {method:'POST'});
+    location.reload();
+  }
+
+  // ── Tabs ───────────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    event.target.classList.add('active');
+    document.getElementById('panel-' + name).classList.add('active');
+  }
+
+  // ── Load all data ──────────────────────────────────────
+  async function loadAll() {
+    await Promise.all([loadItems(), loadClients(), loadSettings()]);
+  }
+
+  // ── Menu Items ─────────────────────────────────────────
+  let items = [];
+
+  async function loadItems() {
+    const res = await fetch('/api/admin/items');
+    items = await res.json();
+    renderItems();
+  }
+
+  function renderItems() {
+    const list = document.getElementById('items-list');
+    if (!items.length) {
+      list.innerHTML = '<p style="color:#444;font-size:.85rem">No items yet.</p>';
+      return;
+    }
+    list.innerHTML = items.map(item => `
+      <div class="item-row">
+        <img src="${item.image || 'https://images.unsplash.com/photo-1541014741259-de529411b96a?w=120&q=60'}"
+             onerror="this.src='https://images.unsplash.com/photo-1541014741259-de529411b96a?w=120&q=60'"
+             alt="${item.name}"/>
+        <div class="item-info">
+          <div class="item-name">${item.name}</div>
+          <div class="item-meta"><span class="badge">${item.category}</span> &nbsp;${item.price}
+            ${item.status === 'soldout'  ? '<span style="color:#cc3333;font-size:.72rem;margin-left:.4rem">🚫 Sold Out</span>'  : ''}
+            ${item.status === 'preorder' ? '<span style="color:#f5a623;font-size:.72rem;margin-left:.4rem">🔔 Pre-Order</span>' : ''}
+          </div>
+        </div>
+        <div class="item-actions">
+          <button class="btn btn-outline btn-sm" onclick="openEditItem('${item.id}')">Edit</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteItem('${item.id}')">Del</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function autoCalcPrices() {
+    const raw = document.getElementById('edit-price').value.trim();
+    const num = parseFloat(raw.replace(/[^0-9.]/g, ''));
+    if (!isNaN(num)) {
+      const prefix = raw.startsWith('$') ? '$' : '';
+      document.getElementById('edit-price2').value = prefix + (num + 100);
+      document.getElementById('edit-price3').value = prefix + (num + 200);
+    }
+  }
+
+  function setStatus(val) {
+    document.getElementById('edit-status').value = val;
+    ['available','preorder','soldout'].forEach(s => {
+      document.getElementById('status-'+s).classList.toggle('active-status', s === val);
+    });
+  }
+
+  function openAddItem() {
+    document.getElementById('modal-title').textContent = 'Add Menu Item';
+    document.getElementById('edit-id').value = '';
+    document.getElementById('edit-cat').value = 'Flower';
+    document.getElementById('edit-name').value = '';
+    document.getElementById('edit-price').value = '';
+    document.getElementById('edit-desc').value = '';
+    document.getElementById('edit-img').value    = '';
+    document.getElementById('edit-video').value  = '';
+    document.getElementById('edit-price2').value = '';
+    document.getElementById('edit-price3').value = '';
+    resetDropzone();
+    resetVidzone();
+    setStatus('available');
+    updatePriceLabels();
+    document.getElementById('item-modal').classList.remove('hidden');
+  }
+
+  function openEditItem(id) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    document.getElementById('modal-title').textContent = 'Edit Item';
+    document.getElementById('edit-id').value = id;
+    document.getElementById('edit-cat').value = item.category;
+    document.getElementById('edit-name').value = item.name;
+    document.getElementById('edit-price').value = item.price;
+    document.getElementById('edit-desc').value = item.description;
+    document.getElementById('edit-img').value    = item.image  || '';
+    document.getElementById('edit-video').value  = item.video  || '';
+    document.getElementById('edit-price2').value = item.price2 || '';
+    document.getElementById('edit-price3').value = item.price3 || '';
+    resetDropzone();
+    resetVidzone();
+    if (item.image) showDropPreview(item.image);
+    if (item.video) showVidPreview(item.video);
+    setStatus(item.status || 'available');
+    updatePriceLabels();
+    document.getElementById('item-modal').classList.remove('hidden');
+  }
+
+  function closeModal() {
+    document.getElementById('item-modal').classList.add('hidden');
+  }
+
+  async function saveItem() {
+    const id = document.getElementById('edit-id').value;
+    const body = {
+      category:    document.getElementById('edit-cat').value,
+      name:        document.getElementById('edit-name').value.trim(),
+      price:       document.getElementById('edit-price').value.trim(),
+      description: document.getElementById('edit-desc').value.trim(),
+      image:       document.getElementById('edit-img').value.trim() ||
+                   'https://images.unsplash.com/photo-1541014741259-de529411b96a?w=600&q=80',
+      status:      document.getElementById('edit-status').value || 'available',
+      video:       document.getElementById('edit-video').value.trim() || '',
+      price2:      document.getElementById('edit-price2').value.trim(),
+      price3:      document.getElementById('edit-price3').value.trim(),
+    };
+    if (!body.name) { toast('Name is required'); return; }
+    const url    = id ? `/api/admin/items/${id}` : '/api/admin/items';
+    const method = id ? 'PUT' : 'POST';
+    const res = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    if (res.ok) { closeModal(); await loadItems(); toast('✓ Item saved'); }
+    else toast('Error saving item');
+  }
+
+  async function deleteItem(id) {
+    if (!confirm('Delete this item?')) return;
+    const res = await fetch(`/api/admin/items/${id}`, {method:'DELETE'});
+    if (res.ok) { await loadItems(); toast('Item deleted'); }
+  }
+
+  // ── Clients ────────────────────────────────────────────
+  let clients = [];
+
+  async function loadClients() {
+    const res = await fetch('/api/admin/clients');
+    clients = await res.json();
+    renderClients();
+  }
+
+  function renderClients() {
+    const list = document.getElementById('client-list');
+    if (!clients.length) {
+      list.innerHTML = '<p style="color:#444;font-size:.85rem">No approved clients yet. Add your first client below.</p>';
+      return;
+    }
+    list.innerHTML = clients.map(c => `
+      <div class="client-row">
+        <div class="client-row-top">
+          <div class="client-info">
+            <div class="client-name" style="display:flex;align-items:center;gap:.5rem">
+            ${[c.name, c.lastname].filter(Boolean).join(' ') || 'Unnamed'}
+            <span class="tier-badge tier-${c.menu||1}">${getMenuName(c.menu||1)}</span>
+          </div>
+            <div class="client-handle" style="display:flex;gap:.8rem;flex-wrap:wrap">
+              ${c.handle ? `<span>📷 ${c.handle}</span>` : ''}
+              ${c.phone  ? `<span>📞 ${c.phone}</span>`  : ''}
+            </div>
+          </div>
+          <div style="display:flex;gap:.4rem">
+            <button class="btn btn-outline btn-sm" onclick="openEditClient('${c.id}')">Edit</button>
+            <button class="btn btn-danger btn-sm" onclick="deleteClient('${c.id}')">Remove</button>
+          </div>
+        </div>
+        <div class="client-code-row">
+          <span class="client-code-label">Code</span>
+          <span class="client-code-val" id="code-${c.id}">${c.code}</span>
+          <button class="copy-btn" onclick="copyCode('${c.id}')">Copy</button>
+          <button class="copy-btn" onclick="regenCode('${c.id}')">🎲 New</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function selectTier(t) {
+    document.getElementById('client-menu').value = t;
+    document.querySelectorAll('.tier-select-btn').forEach(b => {
+      b.classList.toggle('active-tier', parseInt(b.dataset.tier) === t);
+    });
+    // Update button labels with current menu names
+    const s = currentSettings;
+    if (s) {
+      document.querySelector('.tier-select-btn[data-tier="1"]').textContent = s.menu1_name || 'Menu 1';
+      document.querySelector('.tier-select-btn[data-tier="2"]').textContent = s.menu2_name || 'Menu 2';
+      document.querySelector('.tier-select-btn[data-tier="3"]').textContent = s.menu3_name || 'Menu 3';
+    }
+  }
+
+  function updatePriceLabels() {
+    const s = currentSettings;
+    if (!s) return;
+    document.getElementById('price-label-1').textContent = s.menu1_name || 'Menu 1';
+    document.getElementById('price-label-2').textContent = s.menu2_name || 'Menu 2';
+    document.getElementById('price-label-3').textContent = s.menu3_name || 'Menu 3';
+  }
+
+  function openAddClient() {
+    document.getElementById('client-modal-title').textContent = 'Add Client';
+    document.getElementById('client-edit-id').value  = '';
+    document.getElementById('client-name').value     = '';
+    document.getElementById('client-lastname').value = '';
+    document.getElementById('client-handle').value   = '';
+    document.getElementById('client-phone').value    = '';
+    document.getElementById('client-code').value     = '';
+    selectTier(1);
+    document.getElementById('client-modal').classList.remove('hidden');
+  }
+
+  function openEditClient(id) {
+    const c = clients.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('client-modal-title').textContent = 'Edit Client';
+    document.getElementById('client-edit-id').value  = id;
+    document.getElementById('client-name').value     = c.name     || '';
+    document.getElementById('client-lastname').value = c.lastname || '';
+    document.getElementById('client-handle').value   = c.handle   || '';
+    document.getElementById('client-phone').value    = c.phone    || '';
+    document.getElementById('client-code').value     = c.code     || '';
+    selectTier(parseInt(c.menu) || 1);
+    document.getElementById('client-modal').classList.remove('hidden');
+  }
+
+  function closeClientModal() {
+    document.getElementById('client-modal').classList.add('hidden');
+  }
+
+  function genCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const code = Array.from({length:6}, () => chars[Math.floor(Math.random()*chars.length)]).join('');
+    document.getElementById('client-code').value = code;
+  }
+
+  async function saveClient() {
+    const id       = document.getElementById('client-edit-id').value;
+    const name     = document.getElementById('client-name').value.trim();
+    const lastname = document.getElementById('client-lastname').value.trim();
+    const handle   = document.getElementById('client-handle').value.trim();
+    const phone    = document.getElementById('client-phone').value.trim();
+    const code     = document.getElementById('client-code').value.trim();
+    if (!handle && !phone) { toast('IG handle or phone is required'); return; }
+
+    const menu = parseInt(document.getElementById('client-menu').value) || 1;
+    const body = { name, lastname, handle: handle || phone, phone, code, menu };
+    const url    = id ? `/api/admin/clients/${id}` : '/api/admin/clients';
+    const method = id ? 'PUT' : 'POST';
+    const res = await fetch(url, {method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
+    if (res.ok) {
+      closeClientModal();
+      await loadClients();
+      toast('✓ Client saved');
+    } else {
+      toast('Error saving client');
+    }
+  }
+
+  async function regenCode(id) {
+    const res = await fetch(`/api/admin/clients/${id}/regen`, {method:'POST'});
+    if (res.ok) {
+      const {code} = await res.json();
+      const el = document.getElementById('code-' + id);
+      if (el) el.textContent = code;
+      // update local
+      const c = clients.find(x => x.id === id);
+      if (c) c.code = code;
+      toast('✓ New code generated');
+    }
+  }
+
+  function copyCode(id) {
+    const code = document.getElementById('code-' + id)?.textContent;
+    if (!code) return;
+    navigator.clipboard.writeText(code).then(() => toast('Code copied!')).catch(() => {
+      prompt('Copy this code:', code);
+    });
+  }
+
+  async function deleteClient(id) {
+    const c = clients.find(x => x.id === id);
+    if (!confirm(`Remove ${c?.name || c?.handle}?`)) return;
+    const res = await fetch(`/api/admin/clients/${id}`, {method:'DELETE'});
+    if (res.ok) { await loadClients(); toast('Client removed'); }
+  }
+
+  // ── Settings ───────────────────────────────────────────
+  let currentSettings = {};
+
+  function getMenuName(tier) {
+    const t = parseInt(tier) || 1;
+    return currentSettings[`menu${t}_name`] || `Menu ${t}`;
+  }
+
+  async function loadSettings() {
+    const res = await fetch('/api/admin/settings');
+    currentSettings = await res.json();
+    const s = currentSettings;
+    document.getElementById('s-brand').value   = s.brand_name  || '';
+    document.getElementById('s-tagline').value = s.tagline     || '';
+    document.getElementById('s-ig').value      = s.ig_handle   || '';
+    document.getElementById('s-phone').value   = s.phone       || '';
+    document.getElementById('s-menu1').value   = s.menu1_name  || 'Menu 1';
+    document.getElementById('s-menu2').value   = s.menu2_name  || 'Menu 2';
+    document.getElementById('s-menu3').value   = s.menu3_name  || 'Menu 3';
+  }
+
+  async function saveSettings() {
+    const body = {
+      brand_name:  document.getElementById('s-brand').value.trim(),
+      tagline:     document.getElementById('s-tagline').value.trim(),
+      ig_handle:   document.getElementById('s-ig').value.trim(),
+      phone:       document.getElementById('s-phone').value.trim(),
+      menu1_name:  document.getElementById('s-menu1').value.trim(),
+      menu2_name:  document.getElementById('s-menu2').value.trim(),
+      menu3_name:  document.getElementById('s-menu3').value.trim(),
+    };
+    const newPw = document.getElementById('s-adminpw').value.trim();
+    if (newPw) body.admin_password = newPw;
+
+    const res = await fetch('/api/admin/settings', {
+      method: 'PUT',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(body)
+    });
+    if (res.ok) {
+      currentSettings = {...currentSettings, ...body};
+      toast('✓ Settings saved');
+      document.getElementById('s-adminpw').value = '';
+    } else toast('Error saving settings');
+  }
+
+  // ── Toast ──────────────────────────────────────────────
+  function toast(msg) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    setTimeout(() => el.classList.remove('show'), 2500);
+  }
+
+  // ── Download Client List as CSV ───────────────────────
+  function downloadClients() {
+    if (!clients || clients.length === 0) { toast('No clients to download'); return; }
+    const rows = [['Name','Instagram','Phone','Access Code']];
+    clients.forEach(c => {
+      rows.push([
+        `"${(c.name||'').replace(/"/g,'""')}"`,
+        `"${(c.handle||'').replace(/"/g,'""')}"`,
+        `"${(c.phone||'').replace(/"/g,'""')}"`,
+        `"${(c.code||'').replace(/"/g,'""')}"`
+      ]);
+    });
+    const csv = rows.map(r => r.join(',')).join('\r\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const url  = URL.createObjectURL(blob);
+    const a    = document.createElement('a');
+    a.href     = url;
+    const date = new Date().toISOString().slice(0,10);
+    a.download = `sr-clients-${date}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    toast('✓ Client list downloaded');
+  }
+
+  // ── Image Upload / Drag & Drop ─────────────────────────
+  const dropzone = document.getElementById('dropzone');
+
+  dropzone.addEventListener('dragover', e => {
+    e.preventDefault();
+    dropzone.classList.add('drag-over');
+  });
+  dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+  dropzone.addEventListener('drop', e => {
+    e.preventDefault();
+    dropzone.classList.remove('drag-over');
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) handleFileSelect(file);
+  });
+
+  async function handleFileSelect(file) {
+    if (!file) return;
+    const label = document.getElementById('drop-label');
+    label.textContent = 'Uploading…';
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const res = await fetch('/api/admin/upload', { method: 'POST', body: form });
+      const data = await res.json();
+      if (data.url) {
+        document.getElementById('edit-img').value = data.url;
+        showDropPreview(data.url);
+        toast('✓ Image uploaded');
+      } else {
+        label.textContent = '📁 Drop image here or click to browse';
+        toast('Upload failed: ' + (data.error || 'unknown error'));
+      }
+    } catch(err) {
+      label.textContent = '📁 Drop image here or click to browse';
+      toast('Upload error');
+    }
+  }
+
+  function showDropPreview(url) {
+    const preview = document.getElementById('drop-preview');
+    const img = document.getElementById('drop-img-preview');
+    const label = document.getElementById('drop-label');
+    img.src = url;
+    preview.style.display = 'block';
+    label.textContent = '✓ Image ready — drop another to replace';
+  }
+
+  function previewUrl(url) {
+    if (url && url.startsWith('http')) showDropPreview(url);
+  }
+
+  // ── Video Upload ───────────────────────────────────────
+  const vidDropzone = document.getElementById('vid-dropzone');
+  vidDropzone.addEventListener('dragover', e => { e.preventDefault(); vidDropzone.style.borderColor='var(--mg)'; });
+  vidDropzone.addEventListener('dragleave', () => { vidDropzone.style.borderColor='#333'; });
+  vidDropzone.addEventListener('drop', e => {
+    e.preventDefault(); vidDropzone.style.borderColor='#333';
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('video/')) handleVideoSelect(file);
+  });
+
+  async function handleVideoSelect(file) {
+    if (!file) return;
+    const label = document.getElementById('vid-label');
+    label.textContent = 'Uploading…';
+    const form = new FormData();
+    form.append('file', file);
+    try {
+      const res  = await fetch('/api/admin/upload', { method: 'POST', body: form });
+      const data = await res.json();
+      if (data.url) {
+        document.getElementById('edit-video').value = data.url;
+        showVidPreview(data.url);
+        toast('✓ Video uploaded');
+      } else {
+        label.textContent = '🎬 Drop video here or click to browse';
+        toast('Upload failed');
+      }
+    } catch { label.textContent = '🎬 Drop video here or click to browse'; toast('Upload error'); }
+  }
+
+  function showVidPreview(url) {
+    const preview = document.getElementById('vid-preview');
+    const el      = document.getElementById('vid-preview-el');
+    el.src = url;
+    preview.style.display = 'block';
+    document.getElementById('vid-label').textContent = '✓ Video ready — drop another to replace';
+  }
+
+  function resetVidzone() {
+    document.getElementById('vid-preview').style.display = 'none';
+    document.getElementById('vid-preview-el').src = '';
+    document.getElementById('vid-label').textContent = '🎬 Drop video here or click to browse';
+    document.getElementById('video-input').value = '';
+    document.getElementById('edit-video').value  = '';
+  }
+
+  function resetDropzone() {
+    document.getElementById('drop-preview').style.display = 'none';
+    document.getElementById('drop-img-preview').src = '';
+    document.getElementById('drop-label').textContent = '📁 Drop image here or click to browse';
+    document.getElementById('file-input').value = '';
+  }
+</script>
+</body>
+</html>
